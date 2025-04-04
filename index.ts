@@ -8,7 +8,8 @@ import {
   Tool
 } from "@modelcontextprotocol/sdk/types.js";
 import fetch from "node-fetch";
-import { parseArgs } from "node:util";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
 import dotenv from "dotenv";
 import path from "path";
 import express, { Request, Response, NextFunction } from "express";
@@ -157,18 +158,27 @@ httpServer.listen(config.port, () => {
 });
 
 // Parse command line arguments
-const { values } = parseArgs({
-  options: {
-    "api-url": { type: "string" },
-    username: { type: "string" },
-    password: { type: "string" }
-  }
-});
+const argv = yargs(hideBin(process.argv))
+  .option("api-url", {
+    type: "string",
+    description: "MediaWiki API URL",
+    default: "https://wizzypedia.forgottenrunes.com/api.php"
+  })
+  .option("username", {
+    type: "string",
+    description: "MediaWiki username"
+  })
+  .option("password", {
+    type: "string",
+    description: "MediaWiki password"
+  })
+  .help()
+  .parseSync();
 
 // Get MediaWiki API credentials from command line or environment variables
-const API_URL = values["api-url"] || process.env.MEDIAWIKI_API_URL;
-const USERNAME = values["username"] || process.env.MEDIAWIKI_USERNAME;
-const PASSWORD = values["password"] || process.env.MEDIAWIKI_PASSWORD;
+const API_URL = argv.apiUrl || process.env.MEDIAWIKI_API_URL;
+const USERNAME = argv.username || process.env.MEDIAWIKI_USERNAME;
+const PASSWORD = argv.password || process.env.MEDIAWIKI_PASSWORD;
 
 if (!API_URL) {
   console.error(
