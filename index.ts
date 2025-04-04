@@ -873,7 +873,7 @@ async function runStdioServer() {
   console.error(`Authenticated user: ${USERNAME || "None (anonymous mode)"}`);
 }
 
-console.log("Starting server in", SERVER_MODE, "mode");
+// console.log("Starting server in", SERVER_MODE, "mode");
 
 // Try to log in before starting the server
 wikiClient
