@@ -18,6 +18,53 @@ npm install
 npm run build
 ```
 
+## Configuration
+
+### Cursor Configuration
+
+Add the following to your `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "wizzypedia": {
+      "command": "npx",
+      "args": [
+        "wizzypedia-mcp-server",
+        "--login",
+        "your-username",
+        "--password",
+        "your-password"
+      ]
+    }
+  }
+}
+```
+
+### Claude Configuration
+
+Add the MCP configuration to your Claude Desktop config file at:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "wizzypedia": {
+      "command": "npx",
+      "args": [
+        "wizzypedia-mcp-server",
+        "--login",
+        "your-username",
+        "--password",
+        "your-password"
+      ]
+    }
+  }
+}
+```
+
 ## Usage
 
 Run the server with:
@@ -31,6 +78,9 @@ node dist/index.js
 
 # Or with command line arguments
 node dist/index.js --api-url="https://en.wikipedia.org/w/api.php" --username="YourUsername" --password="YourPassword"
+
+# Or using npx
+npx wizzypedia-mcp-server --login dotta --password <yourpassword>
 ```
 
 ### Anonymous Mode

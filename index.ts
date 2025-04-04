@@ -63,7 +63,10 @@ const getOptionalEnv = <T>(
 
 // Configuration object with validation and defaults
 const config: Config = {
-  apiUrl: getRequiredEnv("MEDIAWIKI_API_URL"),
+  apiUrl: getOptionalEnv(
+    "MEDIAWIKI_API_URL",
+    "https://wizzypedia.forgottenrunes.com/api.php"
+  ),
   username: getRequiredEnv("MEDIAWIKI_USERNAME"),
   password: getRequiredEnv("MEDIAWIKI_PASSWORD"),
   port: getOptionalEnv("PORT", 3000, Number),
@@ -176,24 +179,41 @@ const argv = yargs(hideBin(process.argv))
   .parseSync();
 
 // Get MediaWiki API credentials from command line or environment variables
-const API_URL = argv.apiUrl || process.env.MEDIAWIKI_API_URL;
+const API_URL =
+  argv.apiUrl ||
+  process.env.MEDIAWIKI_API_URL ||
+  "https://wizzypedia.forgottenrunes.com/api.php";
 const USERNAME = argv.username || process.env.MEDIAWIKI_USERNAME;
 const PASSWORD = argv.password || process.env.MEDIAWIKI_PASSWORD;
 
-if (!API_URL) {
-  console.error(
-    "MediaWiki API URL is required. Set it via --api-url or MEDIAWIKI_API_URL"
+// Only check for required credentials if they're needed
+if (!USERNAME || !PASSWORD) {
+  console.warn(
+    "No credentials provided - running in anonymous mode (read-only)"
   );
-  process.exit(1);
 }
 
-// MediaWiki API client
+interface MediaWikiError {
+  error: {
+    code: string;
+    info: string;
+  };
+}
+
+interface MediaWikiResponse {
+  error?: {
+    code: string;
+    info: string;
+  };
+  [key: string]: any;
+}
+
 class MediaWikiClient {
   private apiUrl: string;
   private username?: string;
   private password?: string;
   private loggedIn = false;
-  private editToken?: string;
+  private editToken: string = "";
   private cookies: string[] = [];
 
   constructor(apiUrl: string, username?: string, password?: string) {
@@ -205,7 +225,7 @@ class MediaWikiClient {
   private async makeApiCall(
     params: Record<string, any>,
     method: "GET" | "POST" = "GET"
-  ): Promise<any> {
+  ): Promise<MediaWikiResponse> {
     const url = new URL(this.apiUrl);
 
     // Set common parameters
@@ -255,7 +275,7 @@ class MediaWikiClient {
       this.cookies.push(setCookieHeader);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as MediaWikiResponse;
     if (data.error) {
       throw new Error(
         `MediaWiki API error: ${data.error.code} - ${data.error.info}`
@@ -524,7 +544,7 @@ const GET_CATEGORIES_TOOL: Tool = {
 // Create and configure the MCP server
 const server = new Server(
   {
-    name: "mediawiki-mcp-server",
+    name: "wizzypedia-mcp-server",
     version: "1.0.0"
   },
   {
