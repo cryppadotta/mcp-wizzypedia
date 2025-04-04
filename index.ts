@@ -23,8 +23,8 @@ dotenv.config();
 // Configuration Types
 interface Config {
   apiUrl: string;
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
   port: number;
   logLevel: "error" | "warn" | "info" | "debug";
   authTokenExpiry: number;
@@ -67,8 +67,8 @@ const config: Config = {
     "MEDIAWIKI_API_URL",
     "https://wizzypedia.forgottenrunes.com/api.php"
   ),
-  username: getRequiredEnv("MEDIAWIKI_USERNAME"),
-  password: getRequiredEnv("MEDIAWIKI_PASSWORD"),
+  username: getOptionalEnv("MEDIAWIKI_USERNAME", ""),
+  password: getOptionalEnv("MEDIAWIKI_PASSWORD", ""),
   port: getOptionalEnv("PORT", 3000, Number),
   logLevel: getOptionalEnv("LOG_LEVEL", "info") as Config["logLevel"],
   authTokenExpiry: getOptionalEnv("AUTH_TOKEN_EXPIRY", 3600, Number),
@@ -167,9 +167,9 @@ const argv = yargs(hideBin(process.argv))
     description: "MediaWiki API URL",
     default: "https://wizzypedia.forgottenrunes.com/api.php"
   })
-  .option("username", {
+  .option("login", {
     type: "string",
-    description: "MediaWiki username"
+    description: "MediaWiki login username"
   })
   .option("password", {
     type: "string",
@@ -183,7 +183,7 @@ const API_URL =
   argv.apiUrl ||
   process.env.MEDIAWIKI_API_URL ||
   "https://wizzypedia.forgottenrunes.com/api.php";
-const USERNAME = argv.username || process.env.MEDIAWIKI_USERNAME;
+const USERNAME = argv.login || process.env.MEDIAWIKI_USERNAME;
 const PASSWORD = argv.password || process.env.MEDIAWIKI_PASSWORD;
 
 // Only check for required credentials if they're needed
