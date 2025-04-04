@@ -17,7 +17,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.2.1",
+    "@modelcontextprotocol/sdk": "^1.8.0",
     "node-fetch": "^3.3.0"
   },
   "devDependencies": {
