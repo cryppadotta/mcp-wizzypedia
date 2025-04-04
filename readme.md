@@ -30,6 +30,7 @@ Add the following to your `~/.cursor/mcp.json`:
     "wizzypedia": {
       "command": "npx",
       "args": [
+        "-y",
         "wizzypedia-mcp-server",
         "--login",
         "your-username",
@@ -54,6 +55,7 @@ Add the MCP configuration to your Claude Desktop config file at:
     "wizzypedia": {
       "command": "npx",
       "args": [
+        "-y",
         "wizzypedia-mcp-server",
         "--login",
         "your-username",

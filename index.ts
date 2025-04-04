@@ -111,55 +111,6 @@ if (config.sslEnabled) {
   }
 }
 
-// Create Express app
-const app = express();
-
-// Basic middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// CORS middleware
-const corsMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  res.header("Access-Control-Allow-Origin", config.allowedOrigins);
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  if (req.method === "OPTIONS") {
-    res.sendStatus(200);
-    return;
-  }
-  next();
-};
-
-app.use(corsMiddleware);
-
-// Create HTTP(S) server
-const httpServer =
-  config.sslEnabled && config.sslKeyPath && config.sslCertPath
-    ? https.createServer(
-        {
-          key: fs.readFileSync(config.sslKeyPath),
-          cert: fs.readFileSync(config.sslCertPath)
-        },
-        app
-      )
-    : http.createServer(app);
-
-// Start server
-httpServer.listen(config.port, () => {
-  console.log(
-    `Server running on port ${config.port} (${
-      config.sslEnabled ? "HTTPS" : "HTTP"
-    })`
-  );
-});
-
 // Parse command line arguments
 const argv = yargs(hideBin(process.argv))
   .option("api-url", {
@@ -175,6 +126,12 @@ const argv = yargs(hideBin(process.argv))
     type: "string",
     description: "MediaWiki password"
   })
+  .option("mode", {
+    type: "string",
+    description: "Server mode: 'stdio' or 'http'",
+    choices: ["stdio", "http"],
+    default: "stdio"
+  })
   .help()
   .parseSync();
 
@@ -185,12 +142,71 @@ const API_URL =
   "https://wizzypedia.forgottenrunes.com/api.php";
 const USERNAME = argv.login || process.env.MEDIAWIKI_USERNAME;
 const PASSWORD = argv.password || process.env.MEDIAWIKI_PASSWORD;
+const SERVER_MODE = argv.mode as "stdio" | "http";
 
 // Only check for required credentials if they're needed
 if (!USERNAME || !PASSWORD) {
   console.warn(
     "No credentials provided - running in anonymous mode (read-only)"
   );
+}
+
+// Create Express app and HTTP server only if in HTTP mode
+let app: express.Application | undefined;
+let httpServer: http.Server | https.Server | undefined;
+
+if (SERVER_MODE === "http") {
+  // Create Express app
+  app = express();
+
+  // Basic middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // CORS middleware
+  const corsMiddleware = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): void => {
+    res.header("Access-Control-Allow-Origin", config.allowedOrigins);
+    res.header(
+      "Access-Control-Allow-Methods",
+      "GET, POST, PUT, DELETE, OPTIONS"
+    );
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+    );
+    if (req.method === "OPTIONS") {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  };
+
+  app.use(corsMiddleware);
+
+  // Create HTTP(S) server
+  httpServer =
+    config.sslEnabled && config.sslKeyPath && config.sslCertPath
+      ? https.createServer(
+          {
+            key: fs.readFileSync(config.sslKeyPath),
+            cert: fs.readFileSync(config.sslCertPath)
+          },
+          app
+        )
+      : http.createServer(app);
+
+  // Start server
+  httpServer.listen(config.port, () => {
+    console.log(
+      `Server running on port ${config.port} (${
+        config.sslEnabled ? "HTTPS" : "HTTP"
+      })`
+    );
+  });
 }
 
 interface MediaWikiError {
@@ -545,7 +561,7 @@ const GET_CATEGORIES_TOOL: Tool = {
 const server = new Server(
   {
     name: "wizzypedia-mcp-server",
-    version: "1.0.0"
+    version: "1.0.3"
   },
   {
     capabilities: {
@@ -849,13 +865,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 });
 
 // Start the server
-async function runServer() {
+async function runStdioServer() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("MediaWiki MCP Server running on stdio");
   console.error(`Connected to MediaWiki API at: ${API_URL}`);
   console.error(`Authenticated user: ${USERNAME || "None (anonymous mode)"}`);
 }
+
+console.log("Starting server in", SERVER_MODE, "mode");
 
 // Try to log in before starting the server
 wikiClient
@@ -868,8 +886,10 @@ wikiClient
     console.error("Running in anonymous mode (read-only)");
   })
   .finally(() => {
-    runServer().catch((error) => {
-      console.error("Fatal error running server:", error);
-      process.exit(1);
-    });
+    if (SERVER_MODE === "stdio") {
+      runStdioServer().catch((error) => {
+        console.error("Fatal error running server:", error);
+        process.exit(1);
+      });
+    }
   });
