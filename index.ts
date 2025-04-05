@@ -144,13 +144,6 @@ const USERNAME = argv.login || process.env.MEDIAWIKI_USERNAME;
 const PASSWORD = argv.password || process.env.MEDIAWIKI_PASSWORD;
 const SERVER_MODE = argv.mode as "stdio" | "http";
 
-// Only check for required credentials if they're needed
-if (!USERNAME || !PASSWORD) {
-  console.warn(
-    "No credentials provided - running in anonymous mode (read-only)"
-  );
-}
-
 // Create Express app and HTTP server only if in HTTP mode
 let app: express.Application | undefined;
 let httpServer: http.Server | https.Server | undefined;
@@ -620,12 +613,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       throw new Error("Arguments are required");
     }
 
-    // Ensure we're logged in for operations that might need it
-    if (
-      request.params.name !== "search_pages" &&
-      request.params.name !== "read_page"
-    ) {
-      await wikiClient.login();
+    // Only require login for write operations
+    const writeOperations = ["create_page", "update_page"];
+    if (writeOperations.includes(request.params.name)) {
+      const loginSuccess = await wikiClient.login();
+      if (!loginSuccess) {
+        throw new Error(
+          "Authentication required for write operations. Please provide valid username and password."
+        );
+      }
     }
 
     switch (request.params.name) {
@@ -901,26 +897,39 @@ async function runStdioServer() {
   await server.connect(transport);
   console.error("MediaWiki MCP Server running on stdio");
   console.error(`Connected to MediaWiki API at: ${API_URL}`);
-  console.error(`Authenticated user: ${USERNAME || "None (anonymous mode)"}`);
+  console.error(
+    `Mode: ${
+      USERNAME && PASSWORD
+        ? "Authenticated (read/write)"
+        : "Anonymous (read-only)"
+    }`
+  );
 }
 
-// console.log("Starting server in", SERVER_MODE, "mode");
-
-// Try to log in before starting the server
-wikiClient
-  .login()
-  .then(() => {
-    console.error("Login successful");
-  })
-  .catch((error) => {
-    console.error(`Login failed: ${error.message}`);
-    console.error("Running in anonymous mode (read-only)");
-  })
-  .finally(() => {
-    if (SERVER_MODE === "stdio") {
-      runStdioServer().catch((error) => {
-        console.error("Fatal error running server:", error);
-        process.exit(1);
-      });
-    }
-  });
+// Try to log in only if credentials are provided
+if (USERNAME && PASSWORD) {
+  wikiClient
+    .login()
+    .then(() => {
+      console.error("Login successful - write operations enabled");
+    })
+    .catch((error) => {
+      console.error(`Login failed: ${error.message}`);
+      console.error("Running in read-only mode");
+    })
+    .finally(() => {
+      if (SERVER_MODE === "stdio") {
+        runStdioServer().catch((error) => {
+          console.error("Fatal error running server:", error);
+          process.exit(1);
+        });
+      }
+    });
+} else {
+  if (SERVER_MODE === "stdio") {
+    runStdioServer().catch((error) => {
+      console.error("Fatal error running server:", error);
+      process.exit(1);
+    });
+  }
+}
