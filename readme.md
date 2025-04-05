@@ -13,14 +13,22 @@ This means you can query (or write) to the Wizzypedia from any MCP enabled tool.
 - Create new pages (requires authentication)
 - Update existing pages (requires authentication)
 
+## Example
+
+> User: Download the wikitext of the "Dotta" page into a Dotta.wiki file in this repo
+>
+> AI: I'll help you download the wikitext content of the "Dotta" page and save it to a file. Let me break this down into steps:
+> First, I'll fetch the wikitext content of the "Dotta" page: ...
+>
+> // Dotta.wiki page created
+>
+> // Now you can edit Dotta.wiki locally
+>
+> User: Now update the Dotta page with the contents of this file
+>
+> AI: I've successfully updated the Dotta page on the wiki with the contents from our local file. The update was successful and created a new revision (ID: 42157). The content includes all the sections from our local file, including the introduction, The Great Dotta Burning section, and the gallery of images.
+
 ## Installation
-
-```bash
-npm install
-npm run build
-```
-
-## Configuration
 
 ### Authentication
 
@@ -109,6 +117,38 @@ This configuration enables both read and write operations (create/update pages).
 }
 ```
 
+# Available Tools
+
+The server provides the following MCP tools:
+
+Read-only tools (no authentication required):
+
+1. **search_pages** - Search for pages in the wiki
+2. **read_page** - Fetch the raw wikitext content of a page
+3. **get_page_history** - Get revision history of a page
+4. **get_categories** - Get categories a page belongs to
+
+Write tools (authentication required):
+
+1. **create_page** - Create a new wiki page
+2. **update_page** - Update an existing wiki page
+
+## Using with Cursor
+
+Once the server is running, you can connect to it from Cursor or another MCP-compatible client. This allows you to:
+
+1. Search for wiki content
+2. Load wiki content into your editor
+3. Edit content locally
+4. Save changes back to the wiki (requires authentication)
+
+# For Developers
+
+```bash
+npm install
+npm run build
+```
+
 ## Usage
 
 Run the server in read-only mode:
@@ -139,31 +179,6 @@ node dist/index.js --api-url="https://en.wikipedia.org/w/api.php" --login="YourU
 # Or using npx
 npx wizzypedia-mcp-server --login YourUsername --password YourPassword
 ```
-
-## Available Tools
-
-The server provides the following MCP tools:
-
-Read-only tools (no authentication required):
-
-1. **search_pages** - Search for pages in the wiki
-2. **read_page** - Fetch the raw wikitext content of a page
-3. **get_page_history** - Get revision history of a page
-4. **get_categories** - Get categories a page belongs to
-
-Write tools (authentication required):
-
-1. **create_page** - Create a new wiki page
-2. **update_page** - Update an existing wiki page
-
-## Using with Cursor
-
-Once the server is running, you can connect to it from Cursor or another MCP-compatible client. This allows you to:
-
-1. Search for wiki content
-2. Load wiki content into your editor
-3. Edit content locally
-4. Save changes back to the wiki (requires authentication)
 
 ## License
 
