@@ -1,6 +1,8 @@
-# MediaWiki MCP Server
+# Wizzypedia MCP Server
 
-This is a [Model Context Protocol (MCP)](https://github.com/anthropics/anthropic-cookbook/tree/main/tools_and_apis/mcp) server for interacting with MediaWiki APIs, designed to work with MCP-enabled editors like Cursor.
+This is a [Model Context Protocol (MCP)](https://github.com/anthropics/anthropic-cookbook/tree/main/tools_and_apis/mcp) server for interacting with the Wizzpedia APIs, designed to work with MCP-enabled editors like Cursor or Claude Desktop.
+
+This means you can query (or write) to the Wizzypedia from any MCP enabled tool.
 
 ## Features
 
