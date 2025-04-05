@@ -1,4 +1,4 @@
-![Wizzypedia MCP Server](doc/img/img.png)
+![Wizzypedia MCP Server](doc/img/claude.png)
 
 # Wizzypedia MCP Server
 
@@ -40,6 +40,8 @@ The server can run in two modes:
 - **Authenticated Mode**: Both read and write operations are available
 
 Authentication credentials are only required if you need to perform write operations (creating/updating pages).
+
+![Wizzypedia MCP Server](doc/img/img.png)
 
 ### MCP Configuration
 
