@@ -241,7 +241,7 @@ class MediaWikiClient {
   private async makeApiCall(
     params: Record<string, any>,
     method: "GET" | "POST" = "GET"
-  ): Promise<MediaWikiResponse> {
+  ): Promise<any> {
     const url = new URL(this.apiUrl);
 
     // Set common parameters
@@ -249,11 +249,24 @@ class MediaWikiClient {
     params.formatversion = "2";
 
     const headers: Record<string, string> = {
-      "User-Agent": "MediaWiki-MCP-Server/1.0"
+      "User-Agent": "MediaWiki-MCP-Server/1.0",
+      Accept: "application/json"
     };
 
     if (this.cookies.length > 0) {
-      headers["Cookie"] = this.cookies.join("; ");
+      // Only use the most recent cookie for each name
+      const cookieMap = new Map<string, string>();
+      this.cookies.forEach((cookie) => {
+        const [cookieStr] = cookie.split(";");
+        const [name, value] = cookieStr.split("=");
+        cookieMap.set(name, value);
+      });
+
+      const cookieHeader = Array.from(cookieMap.entries())
+        .map(([name, value]) => `${name}=${value}`)
+        .join("; ");
+
+      headers["Cookie"] = cookieHeader;
     }
 
     let response;
@@ -288,10 +301,16 @@ class MediaWikiClient {
     // Save cookies from response
     const setCookieHeader = response.headers.get("Set-Cookie");
     if (setCookieHeader) {
-      this.cookies.push(setCookieHeader);
+      // Split multiple cookies and add each one
+      setCookieHeader.split(",").forEach((cookie) => {
+        const trimmedCookie = cookie.trim();
+        if (!this.cookies.includes(trimmedCookie)) {
+          this.cookies.push(trimmedCookie);
+        }
+      });
     }
 
-    const data = (await response.json()) as MediaWikiResponse;
+    const data = (await response.json()) as Record<string, any>;
     if (data.error) {
       throw new Error(
         `MediaWiki API error: ${data.error.code} - ${data.error.info}`
@@ -311,31 +330,43 @@ class MediaWikiClient {
       return true;
     }
 
-    // Step 1: Get login token
-    const tokenResponse = await this.makeApiCall({
-      action: "query",
-      meta: "tokens",
-      type: "login"
-    });
+    try {
+      // Step 1: Get login token
+      const tokenResponse = await this.makeApiCall({
+        action: "query",
+        meta: "tokens",
+        type: "login"
+      });
 
-    const loginToken = tokenResponse.query.tokens.logintoken;
+      const loginToken = tokenResponse.query.tokens.logintoken;
 
-    // Step 2: Perform login with token
-    const loginResponse = await this.makeApiCall(
-      {
-        action: "login",
-        lgname: this.username,
-        lgpassword: this.password,
-        lgtoken: loginToken
-      },
-      "POST"
-    );
+      // Step 2: Perform login with token using clientlogin
+      const loginResponse = await this.makeApiCall(
+        {
+          action: "clientlogin",
+          username: this.username,
+          password: this.password,
+          logintoken: loginToken,
+          loginreturnurl: "https://wizzypedia.forgottenrunes.com",
+          rememberMe: "1"
+        },
+        "POST"
+      );
 
-    if (loginResponse.login.result === "Success") {
-      this.loggedIn = true;
-      return true;
-    } else {
-      throw new Error(`Login failed: ${loginResponse.login.reason}`);
+      if (loginResponse.clientlogin?.status === "PASS") {
+        this.loggedIn = true;
+        return true;
+      } else {
+        console.error(
+          `Login failed: ${
+            loginResponse.clientlogin?.message || "Unknown error"
+          }`
+        );
+        return false;
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      return false;
     }
   }
 

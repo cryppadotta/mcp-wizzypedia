@@ -36,15 +36,16 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
-    "dotenv": "^16.4.7",
-    "node-fetch": "^3.3.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.14.0",
     "@types/yargs": "^17.0.33",
+    "dotenv": "^16.4.7",
+    "node-fetch": "^3.3.2",
+    "ts-node": "^10.9.2",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.3"
   }
 }
