@@ -186,4 +186,5 @@ npx wizzypedia-mcp-server --login YourUsername --password YourPassword
 
 ## License
 
-MIT
+MIT 2025
+
